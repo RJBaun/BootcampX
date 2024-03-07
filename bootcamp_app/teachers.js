@@ -8,19 +8,26 @@ const pool = new Pool({
 });
 
 args = process.argv.slice(2);
+cohortName = args[0];
 
-pool.query(`
-  SELECT DISTINCT teachers.name AS teacher, cohorts.name AS cohort
-  FROM teachers 
-  JOIN assistance_requests ON teachers.id = teacher_id
-  JOIN students ON students.id = student_id
-  JOIN cohorts ON cohorts.id = cohort_id
-  WHERE cohorts.name LIKE '%${args[0] || 'JUL02'}%'
-  ORDER BY teacher;
-`)
+queryString = `
+SELECT DISTINCT teachers.name AS teacher, cohorts.name AS cohort
+FROM teachers 
+JOIN assistance_requests ON teachers.id = teacher_id
+JOIN students ON students.id = student_id
+JOIN cohorts ON cohorts.id = cohort_id
+WHERE cohorts.name LIKE $1
+ORDER BY teacher;
+`;
+
+values = [`%${cohortName}%`];
+
+
+pool.query(queryString, values)
 .then(res => {
   res.rows.forEach((row) => {
     console.log(`${row.cohort}: ${row.teacher}`)
   })
+  pool.end();
 })
 .catch(err => console.error('query error', err.stack));
